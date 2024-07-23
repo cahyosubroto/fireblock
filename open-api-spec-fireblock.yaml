@@ -1,0 +1,218 @@
+openapi: 3.0.0
+info:
+  title: Technical Writer Tasks APIs
+  description: APIs for managing technical writer tasks.
+  version: 1.0.0
+servers:
+  - url: https://api.techwriter.xyz
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  schemas:
+    Task:
+      type: object
+      properties:
+        task_id:
+          type: string
+          description: The task ID must be between 10 and 64 characters in length and may contain alphanumeric values, dashes ( - ), underscores ( _ ), or whitespace. No symbolic characters are allowed.
+          example: task001
+        title:
+          type: string
+          description: The task title must be between 10 and 64 characters in length and may contain alphanumeric values, dashes ( - ), underscores ( _ ), or whitespace. No symbolic characters are allowed.
+          example: Write a new quickstart guide for Wallet SDK
+        description:
+          type: string
+          description: The task description must be between 20 and 128 characters in length and may contain alphanumeric values, dashes ( - ), underscores ( _ ), or whitespace. No symbolic characters are allowed. characters are allowed.
+          example: The new quickstart guide should cover the easiest end-to-end process for a user to install the SDK.
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        component:
+          $ref: '#/components/schemas/ComponentEnum'
+        connected_tasks:
+          type: array
+          description: The related tasks that connected to this task. If there are multiple tasks, please enter all the taskIds and separate it using a comma. For example (task001, task002)
+          items:
+            $ref: '#/components/schemas/ConnectedTask'
+      required: 
+        - task_id
+        - title
+        - description
+    TaskInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        component:
+          $ref: '#/components/schemas/ComponentEnum'
+        connected_tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectedTask'
+    ConnectedTask:
+      type: object
+      properties:
+        task_id:
+          type: string
+          description: The task ID must be between 10 and 64 characters in length and may contain alphanumeric values, dashes ( - ), underscores ( _ ), or whitespace. No symbolic characters are allowed.
+          example: task001
+    BadRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          description: The error message and how you can resolve it.
+          example: Your syntax is invalid or missing a required parameter.
+    Unauthenticated:
+      type: object
+      properties:
+        message:
+          type: string
+          description: The error message and how you can resolve it.
+          example: Incorrect API key. Please use the correct API key.
+    NotFound:
+      type: object
+      properties:
+        message:
+          type: string
+          description: The error message and how you can resolve it.
+          example: The record was not found on the server. Please use the valid body params.
+    ServerError:
+      type: object
+      properties:
+        message:
+          type: string
+          description: The error message and how you can resolve it.
+          example: Internal Server Error. Please try again or reach out to our support.
+    StatusEnum:
+      type: string
+      description: Please select between `OPEN`, `IN_PROGRESS`, `WON'T DO` or `COMPLETED`. Other values are not allowed. By default, this will be `OPEN`.
+      enum: [OPEN, IN_PROGRESS, WON'T DO, COMPLETED]
+    ComponentEnum:
+      type: string
+      description: Please select between `API_DOCS`, `HELP_CENTER`, `SDK_DOCS`, or `OAS_FILE`. Other values are not allowed. By default, this will be `API_DOCS`.
+      enum: [API_DOCS, HELP_CENTER, SDK_DOCS, OAS_FILE]
+security:
+  - ApiKeyAuth: []
+paths:
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: List all tasks
+      description: Returns a list of technical writer tasks available. If the list is empty, that means there is no task available. 
+      operationId: getTasks
+      parameters:
+        - name: status
+          in: query
+          description:  Only return Tasks that have the given status =  `OPEN`, `IN_PROGRESS`, `WON'T DO`, or `COMPLETED`. 
+          required: false
+          schema:
+            $ref: '#/components/schemas/StatusEnum'
+        - name: component
+          in: query
+          description: Only return Tasks that have the given component =  `API_DOCS`, `HELP_CENTER`, `SDK_DOCS`, or `OAS_FILE`. 
+          required: false
+          schema:
+            $ref: '#/components/schemas/ComponentEnum'
+        - name: updatedAfter
+          in: query
+          description: Only return Tasks that have been updated after a specific date (YYYY-MM-DD). For example = 2024-01-01
+          example: "2024-01-01"
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Unauthenticated'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotFound'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServerError'                  
+  /task:
+    post:
+      tags:
+        - Tasks
+      summary: Create a task
+      description: This endpoint creates a task for the technical writers. The task will be then be reviewed by the developer relations lead to get prioritized or not.
+      operationId: addTask
+      requestBody:
+        description: Create a new technical writer task.
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/Task'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BadRequest'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotFound'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServerError'  
